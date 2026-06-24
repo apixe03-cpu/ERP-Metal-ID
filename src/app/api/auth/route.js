@@ -15,7 +15,7 @@ export async function POST(request) {
         name: 'metal_session',
         value: 'authenticated',
         httpOnly: true, // Impide que la cookie sea leída por JavaScript (más seguro)
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Debe ser false porque se accede por HTTP (no HTTPS)
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 365, // Persiste por 1 año
         path: '/',
