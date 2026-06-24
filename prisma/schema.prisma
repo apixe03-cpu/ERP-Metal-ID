@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Empleados y accesos
+model Employee {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  pin       String      // PIN numérico de 4 dígitos para agilidad
+  role      String      @default("OPERATOR") // ADMIN, OPERATOR
+  
+  processesFinished WorkOrderProcess[] // Para saber qué empleado terminó qué paso
+  auditLogs         AuditLog[]         // Registro de acciones del empleado
+}
+
+// Inventario de chapas (Stock en metros cuadrados o planchas)
+model Inventory {
+  id          String      @id @default(cuid())
+  material    String      @default("Acero al Carbono")
+  thickness   String      // 0.9mm, 1.2mm, 3.2mm, etc.
+  quantitySqM Float       // Cantidad de Metros Cuadrados disponibles
+  updatedAt   DateTime    @updatedAt
+}
+
+// Historial de compras de chapas
+model SheetPurchase {
+  id              String   @id @default(cuid())
+  material        String
+  thickness       String
+  widthMm         Float
+  heightMm        Float
+  quantity        Int
+  providerName    String?
+  receiptNumber   String?
+  purchasedAt     DateTime @default(now())
+  calculatedSqM   Float
+}
+
+model WorkOrder {
+  id               String      @id @default(cuid())
+  title            String
+  description      String?
+  priority         String      @default("NORMAL")
+  material         String?
+  thickness        String?
+  
+  // Producción y dimensiones
+  expectedQuantity Int         @default(1)
+  widthMm          Float?      // Ancho en milímetros
+  heightMm         Float?      // Alto en milímetros
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  
+  isDelivered      Boolean     @default(false)
+  templateId       String?     // Para sincronización con el catálogo original
+
+  processes        WorkOrderProcess[]
+  files            FileAttachment[]
+  delivery         Delivery?
+}
+
+model WorkOrderProcess {
+  id           String      @id @default(cuid())
+  workOrderId  String
+  processName  String      // CORTE_LASER, PLEGADO, CONTROL_CALIDAD, etc.
+  orderIndex   Int
+  status       String      @default("PENDIENTE") // PENDIENTE, EN_CURSO, TERMINADO
+  
+  // Control de Producción y Calidad
+  goodQuantity Int         @default(0)
+  badQuantity  Int         @default(0)
+  
+  // Auditoría y Pausas
+  employeeId   String?     
+  finishedAt   DateTime?
+  
+  issueDescription      String?     // Motivo por el que se pausó/mandó a revisar
+  resolutionDescription String?     // Solución dada desde la oficina
+  reportedByEmployeeId  String?     // Operario que reportó el problema
+
+  workOrder    WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  employee     Employee?   @relation(fields: [employeeId], references: [id])
+}
+
+model Delivery {
+  id           String      @id @default(cuid())
+  workOrderId  String      @unique
+  clientName   String
+  remitoNumber String
+  deliveryType String      // RETIRO, ENVIO
+  address      String?
+  deliveredAt  DateTime    @default(now())
+
+  workOrder    WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+}
+
+model FileAttachment {
+  id          String      @id @default(cuid())
+  url         String
+  name        String
+  type        String      // "DXF", "PDF", "IMAGE"
+  isThumbnail Boolean     @default(false)
+
+  workOrderId String?
+  workOrder   WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  templateId  String?
+  template    ProductTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+
+// Catálogo de Productos (Plantillas)
+model ProductTemplate {
+  id               String      @id @default(cuid())
+  title            String
+  description      String?
+  material         String?
+  thickness        String?
+  widthMm          Float?
+  heightMm         Float?
+  processesJson    String      // Guardamos el array de procesos en un JSON (ej: '["CORTE_LASER", "PLEGADO"]') para agilizar
+
+  files            FileAttachment[] // Archivos vinculados a la plantilla (ej: el DXF base)
+
+  createdAt        DateTime    @default(now())
+}
+
+// Inventario de Productos Terminados Propios
+model FinishedProductInventory {
+  id               String      @id @default(cuid())
+  productName      String      @unique
+  quantity         Int         @default(0)
+  templateId       String?     // Vinculo al producto de catálogo para mostrar especificaciones
+  updatedAt        DateTime    @updatedAt
+}
+
+// Configuración de Materiales y Espesores
+model MaterialThickness {
+  id              String   @id @default(cuid())
+  material        String   // ej: "Acero al Carbono"
+  thickness       String   // ej: "1.2mm"
+  sheetWidthMm    Float?
+  sheetHeightMm   Float?
+  
+  @@unique([material, thickness])
+}
+
+// Configuración de Centros de Trabajo (Procesos)
+model WorkCenter {
+  id        String   @id @default(cuid())
+  name      String   @unique // ej: "Corte Laser", "Plegado", "Pintura"
+}
+
+// Log de Auditoría para acciones críticas (Editar/Eliminar)
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // "EDIT", "DELETE", "CREATE"
+  entityType  String   // "WorkOrder"
+  entityId    String
+  details     String   // JSON o texto con detalles del cambio
+  employeeId  String?  // Quién hizo la acción
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  createdAt   DateTime @default(now())
+}
