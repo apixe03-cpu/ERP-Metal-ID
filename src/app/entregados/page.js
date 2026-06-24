@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import EntregadosClient from "./EntregadosClient";
 import "./Entregados.css";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function EntregadosPage() {
   const deliveries = await prisma.delivery.findMany({
     where: { deliveryType: { not: 'ALTA_STOCK' } },

@@ -4,6 +4,9 @@ import { join } from 'path';
 import prisma from '@/lib/prisma';
 import { Helper } from 'dxf';
 
+export const dynamic = "force-dynamic";
+
+
 export async function POST(request) {
   try {
     const formData = await request.formData();

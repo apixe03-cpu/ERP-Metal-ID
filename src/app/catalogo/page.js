@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import CatalogClient from "./CatalogClient";
 import "./Catalogo.css";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function CatalogoPage() {
   const templates = await prisma.productTemplate.findMany({
     orderBy: { createdAt: 'desc' },

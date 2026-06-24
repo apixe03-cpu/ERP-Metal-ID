@@ -1,6 +1,9 @@
 import KanbanBoard from "@/components/KanbanBoard";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function Home() {
   const materials = await prisma.materialThickness.findMany({
     orderBy: [{ material: 'asc' }, { thickness: 'asc' }]
