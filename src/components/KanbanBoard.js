@@ -141,7 +141,7 @@ export default function KanbanBoard({ materialsConfig = [], employees = [], work
                   {/* Agrupación visual y métricas */}
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                     <span className="badge badge-qty" style={{ background: 'var(--accent-color)', color: 'var(--bg-color)', fontWeight: 'bold' }}>
-                      {order.expectedQuantity} uds
+                      {order.expectedQuantity} {order.expectedQuantity === 1 ? 'unidad' : 'unidades'}
                     </span>
                     {order.thickness && (
                       <span className="badge badge-thickness" style={{ background: 'rgba(255,255,255,0.1)' }}>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import prisma from '@/lib/prisma';
 import { Helper } from 'dxf';
@@ -20,8 +20,10 @@ export async function POST(request) {
     const buffer = Buffer.from(bytes);
 
     // Guardar el archivo original
-    const uniqueName = `${Date.now()}-${file.name}`;
+    const uniqueName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const uploadDir = join(process.cwd(), 'public', 'uploads');
+    await mkdir(uploadDir, { recursive: true });
+    
     const filepath = join(uploadDir, uniqueName);
     await writeFile(filepath, buffer);
 

@@ -7,10 +7,14 @@ export default function FileUploader({ targetId, targetType, onUploadSuccess }) 
   const [uploading, setUploading] = useState(false);
 
   const handleFileChange = async (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const selected = e.target.files[0];
-      setFile(selected);
-      await handleUpload(selected);
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      setFile({ name: `${filesArray.length} archivo(s) seleccionado(s)` });
+      
+      for (const selected of filesArray) {
+        await handleUpload(selected);
+      }
+      setFile(null);
     }
   };
 
@@ -38,7 +42,6 @@ export default function FileUploader({ targetId, targetType, onUploadSuccess }) 
       alert("Error de red");
     } finally {
       setUploading(false);
-      setFile(null); // Reset para poder subir otro
     }
   };
 
@@ -51,9 +54,10 @@ export default function FileUploader({ targetId, targetType, onUploadSuccess }) 
           style={{ display: 'none' }} 
           onChange={handleFileChange}
           accept=".dxf,.pdf,image/*"
+          multiple
         />
         <label htmlFor={`file-upload-${targetId || 'new'}`} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
-          <UploadCloud size={18} /> {uploading ? "Subiendo archivo..." : "Seleccionar y Subir Archivo"}
+          <UploadCloud size={18} /> {uploading ? "Subiendo archivos..." : "Seleccionar y Subir Archivos"}
         </label>
       </div>
 
