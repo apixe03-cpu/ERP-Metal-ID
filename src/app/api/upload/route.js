@@ -19,8 +19,9 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Guardar el archivo original
-    const uniqueName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    // Sanitizar el nombre del archivo (quitar espacios, tildes, caracteres especiales)
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const uniqueName = `${Date.now()}-${sanitizedName}`;
     const uploadDir = join(process.cwd(), 'public', 'uploads');
     await mkdir(uploadDir, { recursive: true });
     
