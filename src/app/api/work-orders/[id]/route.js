@@ -33,8 +33,29 @@ export async function DELETE(request, { params }) {
     const employee = await prisma.employee.findFirst({ where: { pin } });
     if (!employee) return NextResponse.json({ error: 'PIN inválido' }, { status: 401 });
 
-    const workOrder = await prisma.workOrder.findUnique({ where: { id } });
+    const workOrder = await prisma.workOrder.findUnique({ 
+      where: { id },
+      include: { processes: true }
+    });
+    
     if (!workOrder) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+
+    // Reabastecer inventario si tenía corte láser
+    if (workOrder.thickness && workOrder.widthMm && workOrder.heightMm && workOrder.processes.some(p => p.processName === 'CORTE_LASER')) {
+      const sqMetersPerPiece = (workOrder.widthMm * workOrder.heightMm) / 1000000;
+      const totalSqMeters = sqMetersPerPiece * workOrder.expectedQuantity;
+
+      const inventoryItem = await prisma.inventory.findFirst({
+        where: { thickness: workOrder.thickness }
+      });
+
+      if (inventoryItem) {
+        await prisma.inventory.update({
+          where: { id: inventoryItem.id },
+          data: { quantitySqM: { increment: totalSqMeters } }
+        });
+      }
+    }
 
     await prisma.auditLog.create({
       data: {
