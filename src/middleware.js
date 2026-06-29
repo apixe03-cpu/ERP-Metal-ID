@@ -15,8 +15,20 @@ export function middleware(request) {
   const authCookie = request.cookies.get('metal_session');
 
   // Si no está autenticado, redirigimos al login
-  if (!authCookie || authCookie.value !== 'authenticated') {
+  if (!authCookie || !['admin', 'operator', 'authenticated'].includes(authCookie.value)) {
     return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  const role = authCookie.value;
+  const path = request.nextUrl.pathname;
+
+  // Si es operario, restringir el acceso solo al tablero y al inventario
+  if (role === 'operator') {
+    const allowedOperatorPaths = ['/', '/inventario'];
+    // Permitimos llamadas a las API, pero restringimos las páginas
+    if (!path.startsWith('/api/') && !path.startsWith('/uploads/') && !allowedOperatorPaths.includes(path) && path !== '/login') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
   }
 
   return NextResponse.next();

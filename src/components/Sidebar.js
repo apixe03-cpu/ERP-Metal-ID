@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, Truck, BarChart2, Settings, Layers, ShoppingCart } from "lucide-react";
 import "./Sidebar.css";
 
-export default function Sidebar() {
+export default function Sidebar({ role = 'admin' }) {
   const pathname = usePathname();
 
   if (pathname === '/login') return null;
@@ -19,6 +19,13 @@ export default function Sidebar() {
     { name: "Configuración", path: "/config", icon: <Settings size={20} /> },
   ];
 
+  const visibleItems = navItems.filter(item => {
+    if (role === 'operator') {
+      return item.path === '/' || item.path === '/inventario';
+    }
+    return true; // Admin ve todo
+  });
+
   return (
     <aside className="sidebar glass">
       <div className="sidebar-brand">
@@ -26,7 +33,7 @@ export default function Sidebar() {
         <p>ERP & Producción</p>
       </div>
       <nav className="sidebar-nav">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname === item.path;
           return (
             <Link key={item.path} href={item.path} className={`nav-item ${isActive ? "active" : ""}`}>

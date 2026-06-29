@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import "./globals.css";
 import "@/components/Modal.css";
 import "@/app/config/Config.css";
@@ -9,11 +10,15 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const cookieStore = cookies();
+  const sessionValue = cookieStore.get('metal_session')?.value;
+  const role = sessionValue === 'operator' ? 'operator' : 'admin'; // 'authenticated' (vieja cookie) se trata como admin
+
   return (
     <html lang="es">
       <body>
         <div className="app-layout">
-          <Sidebar />
+          <Sidebar role={role} />
           <div className="main-content">
             {children}
           </div>
