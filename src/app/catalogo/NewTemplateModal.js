@@ -154,7 +154,7 @@ export default function NewTemplateModal({ isOpen, onClose, onSaved, materialsCo
             <FileUploader 
               targetId={initialData?.id || null} 
               targetType="TEMPLATE" 
-              onUploadSuccess={(file) => setTemplateFiles([...templateFiles, file])} 
+              onUploadSuccess={(file) => setTemplateFiles(prev => [...prev, file])} 
             />
             <AttachmentList 
               files={templateFiles} 

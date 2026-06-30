@@ -374,7 +374,7 @@ export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated
             targetId={order.id} 
             targetType="WORK_ORDER" 
             onUploadSuccess={(file) => {
-              setOrderFiles([...orderFiles, file]);
+              setOrderFiles(prev => [...prev, file]);
               onUpdated();
             }} 
           />

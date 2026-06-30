@@ -180,7 +180,7 @@ export default function NewWorkOrderModal({ isOpen, onClose, onCreated, material
             <FileUploader 
               targetId={null} 
               targetType="WORK_ORDER" 
-              onUploadSuccess={(file) => setUploadedFiles([...uploadedFiles, file])} 
+              onUploadSuccess={(file) => setUploadedFiles(prev => [...prev, file])} 
             />
             <AttachmentList 
               files={uploadedFiles} 
