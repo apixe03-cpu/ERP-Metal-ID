@@ -35,8 +35,31 @@ export default function AttachmentList({ files, onRemove, onUpdateFiles, onSyste
     }
   };
 
+  const handleDownloadAll = () => {
+    files.forEach((f, index) => {
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = f.url;
+        a.download = f.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, index * 300);
+    });
+  };
+
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem' }}>
+    <div>
+      {files.length > 1 && (
+        <button 
+          className="btn btn-secondary mb-2" 
+          onClick={handleDownloadAll} 
+          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <Box size={14} /> Descargar Todos ({files.length})
+        </button>
+      )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
       {files.map(f => (
         <div key={f.id} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {f.type === "DXF" && <Box size={18} color="var(--primary-color)" />}
@@ -82,6 +105,7 @@ export default function AttachmentList({ files, onRemove, onUpdateFiles, onSyste
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

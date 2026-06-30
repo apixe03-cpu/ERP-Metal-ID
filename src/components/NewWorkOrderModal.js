@@ -21,6 +21,7 @@ export default function NewWorkOrderModal({ isOpen, onClose, onCreated, material
   const [processes, setProcesses] = useState(["CORTE_LASER"]); 
   const [loading, setLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isAssembly, setIsAssembly] = useState(false);
 
   if (!isOpen) return null;
 
@@ -57,8 +58,8 @@ export default function NewWorkOrderModal({ isOpen, onClose, onCreated, material
         material,
         thickness, 
         expectedQuantity: parseInt(expectedQuantity),
-        widthMm: widthMm ? parseFloat(widthMm) : null,
-        heightMm: heightMm ? parseFloat(heightMm) : null,
+        widthMm: (!isAssembly && widthMm) ? parseFloat(widthMm) : null,
+        heightMm: (!isAssembly && heightMm) ? parseFloat(heightMm) : null,
         processes,
         fileIds: uploadedFiles.map(f => f.id)
       };
@@ -77,6 +78,7 @@ export default function NewWorkOrderModal({ isOpen, onClose, onCreated, material
         setSelectedMaterialId("");
         setWidthMm("");
         setHeightMm("");
+        setIsAssembly(false);
         setProcesses(["CORTE_LASER", "PLEGADO"]);
         setUploadedFiles([]);
         onCreated();
@@ -154,24 +156,36 @@ export default function NewWorkOrderModal({ isOpen, onClose, onCreated, material
             </div>
             
             <div className="form-group flex-1">
-              <label>Tamaño Pieza (Mm)</label>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <input 
-                  type="number" 
-                  placeholder="Ancho"
-                  value={widthMm} 
-                  onChange={(e) => setWidthMm(e.target.value)}
-                  style={{ width: '100%' }}
-                />
-                <span>x</span>
-                <input 
-                  type="number" 
-                  placeholder="Alto"
-                  value={heightMm} 
-                  onChange={(e) => setHeightMm(e.target.value)}
-                  style={{ width: '100%' }}
-                />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label>Tamaño Pieza (Mm)</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--accent-color)' }}>
+                  <input type="checkbox" checked={isAssembly} onChange={(e) => setIsAssembly(e.target.checked)} />
+                  Múltiples DXFs (Ensamble)
+                </label>
               </div>
+              {!isAssembly ? (
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input 
+                    type="number" 
+                    placeholder="Ancho"
+                    value={widthMm} 
+                    onChange={(e) => setWidthMm(e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                  <span>x</span>
+                  <input 
+                    type="number" 
+                    placeholder="Alto"
+                    value={heightMm} 
+                    onChange={(e) => setHeightMm(e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ) : (
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.8rem', borderRadius: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Las medidas se ignoran. El operario ingresará el gasto exacto de planchas de chapa cuando finalice el Corte Láser.
+                </div>
+              )}
             </div>
           </div>
 

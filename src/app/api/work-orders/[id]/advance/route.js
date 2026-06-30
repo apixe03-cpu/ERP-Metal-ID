@@ -11,7 +11,7 @@ export async function POST(request, { params }) {
     // El frontend puede enviar opcionalmente buenas y malas y el PIN
     const bodyText = await request.text();
     const body = bodyText ? JSON.parse(bodyText) : {};
-    const { goodQuantity = 0, badQuantity = 0, pin } = body;
+    const { goodQuantity = 0, badQuantity = 0, pin, consumedSqMeters = 0 } = body;
     const goodQty = parseInt(goodQuantity);
     const badQty = parseInt(badQuantity);
 
@@ -56,6 +56,19 @@ export async function POST(request, { params }) {
         badQuantity: isLastProcess ? badQty : currentProcess.badQuantity
       }
     });
+
+    // Descontar inventario manualmente si es ensamble
+    if (currentProcess.processName === 'CORTE_LASER' && consumedSqMeters > 0 && workOrder.thickness) {
+      const inventoryItem = await prisma.inventory.findFirst({
+        where: { thickness: workOrder.thickness }
+      });
+      if (inventoryItem) {
+        await prisma.inventory.update({
+          where: { id: inventoryItem.id },
+          data: { quantitySqM: { decrement: parseFloat(consumedSqMeters) } }
+        });
+      }
+    }
 
     // Si hay un siguiente paso, pasarlo a EN_CURSO
     if (nextProcess) {

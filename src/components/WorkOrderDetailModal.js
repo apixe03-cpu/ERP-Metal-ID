@@ -5,7 +5,7 @@ import "./Modal.css";
 import FileUploader from "./FileUploader";
 import AttachmentList from "./AttachmentList";
 
-export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated, employees = [] }) {
+export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated, employees = [], materialsConfig = [] }) {
   const [loading, setLoading] = useState(false);
   const [goodQty, setGoodQty] = useState("");
   const [badQty, setBadQty] = useState(0);
@@ -16,6 +16,7 @@ export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated
   const [isResolving, setIsResolving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePin, setDeletePin] = useState("");
+  const [consumedSheets, setConsumedSheets] = useState("");
   
   // order.files vendrá si lo pedimos en el GET
   const [orderFiles, setOrderFiles] = useState(order?.files || []);
@@ -31,6 +32,17 @@ export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated
   
   // Determinar si es el último proceso
   const isLastProcess = currentProcess && order.processes[order.processes.length - 1].id === currentProcess.id;
+  
+  const isAssembly = !order.widthMm || !order.heightMm;
+  const isLaser = currentProcess && currentProcess.processName === 'CORTE_LASER';
+
+  const getSheetSqMeters = () => {
+    const mat = materialsConfig.find(m => m.material === order.material && m.thickness === order.thickness);
+    if (mat && mat.sheetWidthMm && mat.sheetHeightMm) {
+      return (mat.sheetWidthMm * mat.sheetHeightMm) / 1000000;
+    }
+    return 3; // Valor por defecto si no está configurado (aprox 1220x2440)
+  };
 
   const handleAdvance = async () => {
     if (!pin) {
@@ -46,15 +58,27 @@ export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated
       }
     }
     
+    // Si es ensamble y está en láser, pedir planchas
+    if (isLaser && isAssembly && (!consumedSheets || parseFloat(consumedSheets) <= 0)) {
+      alert("Por favor ingresa la cantidad de planchas utilizadas.");
+      return;
+    }
+
     setLoading(true);
     try {
+      let finalConsumedSqMeters = 0;
+      if (isLaser && isAssembly) {
+        finalConsumedSqMeters = parseFloat(consumedSheets) * getSheetSqMeters();
+      }
+
       const res = await fetch(`/api/work-orders/${order.id}/advance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           pin, 
           goodQuantity: isLastProcess ? parseInt(goodQty) : 0, 
-          badQuantity: isLastProcess ? parseInt(badQty) : 0 
+          badQuantity: isLastProcess ? parseInt(badQty) : 0,
+          consumedSqMeters: finalConsumedSqMeters
         })
       });
       
@@ -62,6 +86,7 @@ export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated
         setPin("");
         setGoodQty("");
         setBadQty(0);
+        setConsumedSheets("");
         onUpdated();
         if (isLastProcess) onClose();
       } else {
@@ -301,6 +326,33 @@ export default function WorkOrderDetailModal({ order, isOpen, onClose, onUpdated
                     style={{ fontSize: '1.2rem', textAlign: 'center', letterSpacing: '0.2em' }}
                   />
                 </div>
+
+                {isLaser && isAssembly && (
+                  <div className="form-group mt-3" style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-color)' }}>
+                    <label style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>
+                      Planchas utilizadas en el Ensamble
+                    </label>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      (Permite decimales, ej: 1.5 para una plancha y media)
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        min="0"
+                        value={consumedSheets} 
+                        onChange={(e) => setConsumedSheets(e.target.value)} 
+                        placeholder="Cantidad de planchas"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                    {consumedSheets && (
+                      <p style={{ fontSize: '0.85rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                        Se descontarán {(parseFloat(consumedSheets) * getSheetSqMeters()).toFixed(2)} m² del inventario.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {isLastProcess && (
                   <div className="form-row mt-3">

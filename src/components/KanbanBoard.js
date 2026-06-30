@@ -246,6 +246,7 @@ export default function KanbanBoard({ materialsConfig = [], employees = [], work
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
         employees={employees}
+        materialsConfig={materialsConfig}
         onUpdated={() => {
           fetchWorkOrders();
           setSelectedOrder(null);
